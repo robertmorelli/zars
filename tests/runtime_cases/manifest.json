@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "integer_arithmetic",
+      "description": "Integer ALU + HI/LO baseline",
+      "program_path": "test_programs/integer_arithmetic.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/integer_arithmetic.stdout"
+    },
+    {
+      "id": "bitwise_shift",
+      "description": "Bitwise and shift instruction baseline",
+      "program_path": "test_programs/bitwise_shift.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/bitwise_shift.stdout"
+    },
+    {
+      "id": "memory_access",
+      "description": "Load/store and sign extension",
+      "program_path": "test_programs/memory_access.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/memory_access.stdout"
+    },
+    {
+      "id": "control_flow",
+      "description": "Loop, jump, and call control flow",
+      "program_path": "test_programs/control_flow.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/control_flow.stdout"
+    },
+    {
+      "id": "pseudo_ops",
+      "description": "Pseudo-op expansion behavior",
+      "program_path": "test_programs/pseudo_ops.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_ops.stdout"
+    },
+    {
+      "id": "macro_and_include",
+      "description": "Macros, include files, and .eqv",
+      "program_path": "test_programs/macro_and_include.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/macro_and_include.stdout"
+    },
+    {
+      "id": "syscall_formatting",
+      "description": "MARS formatting syscalls 34/35/36",
+      "program_path": "test_programs/syscall_formatting.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_formatting.stdout"
+    },
+    {
+      "id": "syscall_file_io",
+      "description": "File open/read/write/close syscalls",
+      "program_path": "test_programs/syscall_file_io.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_file_io.stdout"
+    },
+    {
+      "id": "syscall_random_seed",
+      "description": "Deterministic random stream with fixed seed",
+      "program_path": "test_programs/syscall_random_seed.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_random_seed.stdout"
+    },
+    {
+      "id": "floating_point",
+      "description": "Coprocessor 1 arithmetic and branch",
+      "program_path": "test_programs/floating_point.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/floating_point.stdout"
+    },
+    {
+      "id": "delayed_branch_default",
+      "description": "Delayed branch disabled baseline",
+      "program_path": "test_programs/delayed_branch_probe.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delayed_branch_default.stdout"
+    },
+    {
+      "id": "delayed_branch_db",
+      "description": "Delayed branch enabled behavior",
+      "program_path": "test_programs/delayed_branch_probe.s",
+      "mars_options": ["db", "nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delayed_branch_db.stdout"
+    },
+    {
+      "id": "program_args",
+      "description": "Program argument loading and argv traversal",
+      "program_path": "test_programs/program_args.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": ["pa", "alpha", "beta", "gamma"],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/program_args.stdout"
+    },
+    {
+      "id": "smc_patch_syscall_code",
+      "description": "Text patching and non-zero syscall code field",
+      "program_path": "test_programs/smc_patch_syscall_code.s",
+      "mars_options": ["smc", "nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_syscall_code.stdout"
+    },
+    {
+      "id": "syscall_clear_screen",
+      "description": "MARS extension syscall 60 smoke test",
+      "program_path": "test_programs/syscall_clear_screen.s",
+      "mars_options": ["nc"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_clear_screen.stdout"
+    },
+    {
+      "id": "project_mode",
+      "description": "Multi-file project mode assembly and linking",
+      "program_path": "test_programs/project_mode/main.s",
+      "mars_options": ["nc", "p"],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/project_mode.stdout"
+    },
+    {
+      "id": "smc_advanced",
+      "description": "Advanced SMC state-machine fizzbuzz",
+      "program_path": "test_programs/smc.s",
+      "mars_options": ["smc", "nc"],
+      "mars_extra_args": [],
+      "stdin_text": "20\n",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_advanced.stdout"
+    }
+  ]
+}
