@@ -7,7 +7,6 @@ pub const StatusCode = enum(u32) {
     invalid_program_length = 1,
     program_not_loaded = 2,
     parse_error = 3,
-    unsupported_instruction = 4,
     runtime_error = 5,
 };
 
@@ -15,6 +14,7 @@ pub const program_capacity_bytes: u32 = 1024 * 1024;
 pub const output_capacity_bytes: u32 = 1024 * 1024;
 pub const input_capacity_bytes: u32 = 64 * 1024;
 
+// Runtime buffers are static so wasm host code can write/read by pointer.
 pub var program_storage: [program_capacity_bytes]u8 = [_]u8{0} ** program_capacity_bytes;
 pub var output_storage: [output_capacity_bytes]u8 = [_]u8{0} ** output_capacity_bytes;
 pub var input_storage: [input_capacity_bytes]u8 = [_]u8{0} ** input_capacity_bytes;
@@ -28,6 +28,7 @@ pub const RuntimeState = struct {
     input_len_bytes: u32 = 0,
 
     pub fn reset(self: *RuntimeState) void {
+        // Reset both metadata and backing buffers between runs.
         self.loaded_program_len_bytes = 0;
         self.output_len_bytes = 0;
         self.last_status_code = .ok;
@@ -40,6 +41,7 @@ pub const RuntimeState = struct {
     }
 
     pub fn load_program(self: *RuntimeState, program_len_bytes: u32) StatusCode {
+        // The host writes program bytes into `program_storage`, then registers length here.
         if (program_len_bytes > program_capacity_bytes) {
             self.loaded_program_len_bytes = 0;
             self.last_status_code = .invalid_program_length;
@@ -57,6 +59,7 @@ pub const RuntimeState = struct {
             return self.last_status_code;
         }
 
+        // Validate compile-time and runtime invariants before dispatch.
         globals.validate_invariants();
 
         const program_len: usize = @intCast(self.loaded_program_len_bytes);
@@ -79,6 +82,7 @@ pub const RuntimeState = struct {
     }
 
     pub fn set_input_len(self: *RuntimeState, len_bytes: u32) StatusCode {
+        // Input bytes are written by host to `input_storage`; this call sets active prefix length.
         if (len_bytes > input_capacity_bytes) {
             self.last_status_code = .invalid_program_length;
             return self.last_status_code;
@@ -90,10 +94,10 @@ pub const RuntimeState = struct {
 };
 
 fn map_engine_status(status: engine.StatusCode) StatusCode {
+    // External status enum intentionally wraps the engine-specific status enum.
     return switch (status) {
         .ok => .ok,
         .parse_error => .parse_error,
-        .unsupported_instruction => .unsupported_instruction,
         .runtime_error => .runtime_error,
     };
 }

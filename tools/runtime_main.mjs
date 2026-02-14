@@ -13,8 +13,43 @@ const repo_root = path.resolve(script_dir, "..");
 const default_manifest_path = path.join(repo_root, "tests/runtime_cases/manifest.json");
 const default_wasm_path = path.join(repo_root, "zig-out/bin/lib/zars_runtime.wasm");
 const default_mars_jar_path = path.join(repo_root, "MARS/Mars.jar");
+const data_segment_base_addr = 0x10010000;
+const heap_segment_base_addr = 0x10040000;
+
+const integer_register_specs = [
+    { name: "zero", index: 0 },
+    { name: "v0", index: 2 },
+    { name: "v1", index: 3 },
+    { name: "a0", index: 4 },
+    { name: "a1", index: 5 },
+    { name: "a2", index: 6 },
+    { name: "a3", index: 7 },
+    { name: "t0", index: 8 },
+    { name: "t1", index: 9 },
+    { name: "t2", index: 10 },
+    { name: "t3", index: 11 },
+    { name: "t4", index: 12 },
+    { name: "t5", index: 13 },
+    { name: "t6", index: 14 },
+    { name: "t7", index: 15 },
+    { name: "s0", index: 16 },
+    { name: "s1", index: 17 },
+    { name: "s2", index: 18 },
+    { name: "s3", index: 19 },
+    { name: "s4", index: 20 },
+    { name: "s5", index: 21 },
+    { name: "s6", index: 22 },
+    { name: "s7", index: 23 },
+    { name: "t8", index: 24 },
+    { name: "t9", index: 25 },
+    { name: "k0", index: 26 },
+    { name: "k1", index: 27 },
+];
+
+const floating_register_names = Array.from({ length: 32 }, (_, index) => `f${index}`);
 
 function parse_args(argv) {
+    // Keep CLI options explicit so scripted test runs are stable and discoverable.
     const options = {
         engine: "compare",
         case_id: "all",
@@ -24,6 +59,7 @@ function parse_args(argv) {
         wasm_path: default_wasm_path,
         mars_jar_path: default_mars_jar_path,
         dump_preprocessed: false,
+        state_parity: true,
     };
 
     let index = 0;
@@ -53,6 +89,8 @@ function parse_args(argv) {
             process.exit(0);
         } else if (arg === "--dump-preprocessed") {
             options.dump_preprocessed = true;
+        } else if (arg === "--no-state-parity") {
+            options.state_parity = false;
         } else {
             throw new Error(`Unknown argument: ${arg}`);
         }
@@ -83,6 +121,7 @@ function print_help() {
         "  --mars-jar <path>              MARS jar path (default: MARS/Mars.jar)",
         "  --help                         Show this help",
         "  --dump-preprocessed            Print WASM preprocessed source for selected case(s)",
+        "  --no-state-parity              Skip register/memory parity checks in compare mode",
     ];
     console.log(lines.join("\n"));
 }
@@ -112,6 +151,7 @@ function select_cases(manifest, case_id) {
 }
 
 function run_command(command, args, stdin_text) {
+    // All subprocesses run from repo root so relative paths in manifest stay valid.
     const result = spawnSync(command, args, {
         cwd: repo_root,
         encoding: "utf8",
@@ -129,12 +169,13 @@ function run_command(command, args, stdin_text) {
     };
 }
 
-function run_mars_case(case_definition, mars_jar_path) {
+function run_mars_case(case_definition, mars_jar_path, extra_mars_options = []) {
     const program_path = path.resolve(repo_root, case_definition.program_path);
     const mars_args = [
         "-jar",
         mars_jar_path,
         ...case_definition.mars_options,
+        ...extra_mars_options,
         program_path,
         ...case_definition.mars_extra_args,
     ];
@@ -161,7 +202,32 @@ function read_golden_stdout(case_definition) {
     return fs.readFileSync(expected_stdout_path, "utf8");
 }
 
+function diagnostic_text_from_mars_result(mars_result) {
+    return `${mars_result.stdout}${mars_result.stderr}`;
+}
+
+function write_golden_diagnostic(case_definition, diagnostic_text) {
+    if (!case_definition.expected_diagnostic_path) {
+        return;
+    }
+    const expected_diagnostic_path = path.resolve(repo_root, case_definition.expected_diagnostic_path);
+    ensure_parent_directory(expected_diagnostic_path);
+    fs.writeFileSync(expected_diagnostic_path, diagnostic_text, "utf8");
+}
+
+function read_golden_diagnostic(case_definition) {
+    if (!case_definition.expected_diagnostic_path) {
+        return null;
+    }
+    const expected_diagnostic_path = path.resolve(repo_root, case_definition.expected_diagnostic_path);
+    if (!fs.existsSync(expected_diagnostic_path)) {
+        return null;
+    }
+    return fs.readFileSync(expected_diagnostic_path, "utf8");
+}
+
 function build_wasm_runtime() {
+    // The wasm binary is rebuilt in test flows unless user explicitly opts out.
     const build_result = run_command("zig", ["build", "wasm-runtime"], "");
     if (build_result.status !== 0) {
         process.stderr.write(build_result.stdout);
@@ -179,6 +245,7 @@ async function load_wasm_runtime(wasm_path) {
     const module = await WebAssembly.instantiate(wasm_bytes, {});
     const exports = module.instance.exports;
 
+    // Export contract is intentionally strict so runtime regressions fail fast.
     const required_exports = [
         "memory",
         "zars_reset",
@@ -194,6 +261,14 @@ async function load_wasm_runtime(wasm_path) {
         "zars_output_ptr",
         "zars_output_len_bytes",
         "zars_last_status_code",
+        "zars_regs_ptr",
+        "zars_fp_regs_ptr",
+        "zars_data_ptr",
+        "zars_data_len_bytes",
+        "zars_heap_ptr",
+        "zars_heap_len_bytes",
+        "zars_data_base_addr",
+        "zars_heap_base_addr",
     ];
 
     for (const export_name of required_exports) {
@@ -206,11 +281,14 @@ async function load_wasm_runtime(wasm_path) {
 }
 
 function run_wasm_case(case_definition, wasm_exports) {
+    // Host-side preprocessing resolves include files only.
+    // Macro and `.eqv` preprocessing now runs inside the Zig runtime.
     const program_source_text = load_wasm_program_source(case_definition);
     const program_bytes = text_encoder.encode(program_source_text);
     const stdin_bytes = text_encoder.encode(case_definition.stdin_text ?? "");
 
     wasm_exports.zars_reset();
+    // MARS mode flags map to runtime toggles for parity.
     const delayed_branching = case_definition.mars_options.includes("db") ? 1 : 0;
     const smc_enabled = case_definition.mars_options.includes("smc") ? 1 : 0;
     wasm_exports.zars_set_delayed_branching(delayed_branching);
@@ -241,6 +319,7 @@ function run_wasm_case(case_definition, wasm_exports) {
     const input_view = new Uint8Array(memory.buffer, input_ptr, stdin_bytes.length);
     input_view.set(stdin_bytes);
 
+    // Keep individual status codes for debugging failures in load/run plumbing.
     const input_status_code = wasm_exports.zars_set_input_len_bytes(stdin_bytes.length);
     const load_status_code = wasm_exports.zars_load_program(program_bytes.length);
     const run_status_code = wasm_exports.zars_run();
@@ -251,6 +330,7 @@ function run_wasm_case(case_definition, wasm_exports) {
     ensure_wasm_memory_capacity(memory, output_ptr + output_len_bytes);
     const output_view = new Uint8Array(memory.buffer, output_ptr, output_len_bytes);
     const stdout_text = text_decoder.decode(output_view);
+    const state_snapshot = read_wasm_state_snapshot(wasm_exports);
 
     return {
         input_status_code,
@@ -258,12 +338,64 @@ function run_wasm_case(case_definition, wasm_exports) {
         run_status_code,
         last_status_code,
         stdout: stdout_text,
+        state_snapshot,
+    };
+}
+
+function read_wasm_state_snapshot(wasm_exports) {
+    const memory = wasm_exports.memory;
+
+    const int_regs_ptr = wasm_exports.zars_regs_ptr();
+    ensure_wasm_memory_capacity(memory, int_regs_ptr + 32 * 4);
+    const int_regs_view = new Int32Array(memory.buffer, int_regs_ptr, 32);
+    const int_regs = Array.from(int_regs_view, (value) => value >>> 0);
+
+    const fp_regs_ptr = wasm_exports.zars_fp_regs_ptr();
+    ensure_wasm_memory_capacity(memory, fp_regs_ptr + 32 * 4);
+    const fp_regs_view = new Uint32Array(memory.buffer, fp_regs_ptr, 32);
+    const fp_regs = Array.from(fp_regs_view);
+
+    const data_len_bytes = wasm_exports.zars_data_len_bytes();
+    const data_align_len_bytes = align_up_to_word(data_len_bytes);
+    const data_ptr = wasm_exports.zars_data_ptr();
+    ensure_wasm_memory_capacity(memory, data_ptr + data_align_len_bytes);
+    const data_bytes = new Uint8Array(data_align_len_bytes);
+    if (data_align_len_bytes > 0) {
+        const source = new Uint8Array(memory.buffer, data_ptr, data_align_len_bytes);
+        data_bytes.set(source);
+    }
+
+    const heap_len_bytes = wasm_exports.zars_heap_len_bytes();
+    const heap_align_len_bytes = align_up_to_word(heap_len_bytes);
+    const heap_ptr = wasm_exports.zars_heap_ptr();
+    ensure_wasm_memory_capacity(memory, heap_ptr + heap_align_len_bytes);
+    const heap_bytes = new Uint8Array(heap_align_len_bytes);
+    if (heap_align_len_bytes > 0) {
+        const source = new Uint8Array(memory.buffer, heap_ptr, heap_align_len_bytes);
+        heap_bytes.set(source);
+    }
+
+    const data_base_addr = wasm_exports.zars_data_base_addr();
+    const heap_base_addr = wasm_exports.zars_heap_base_addr();
+
+    return {
+        int_regs,
+        fp_regs,
+        data_len_bytes,
+        data_align_len_bytes,
+        data_base_addr,
+        data_bytes,
+        heap_len_bytes,
+        heap_align_len_bytes,
+        heap_base_addr,
+        heap_bytes,
     };
 }
 
 function load_wasm_program_source(case_definition) {
     const program_path = path.resolve(repo_root, case_definition.program_path);
     if (case_definition.mars_options.includes("p")) {
+        // `-p` mode in MARS assembles all sibling source files in directory order.
         const program_dir = path.dirname(program_path);
         const file_names = fs
             .readdirSync(program_dir)
@@ -287,12 +419,13 @@ function load_wasm_program_source(case_definition) {
 }
 
 function preprocess_source(source_text, base_dir) {
-    const with_includes = resolve_includes(source_text, base_dir, new Set());
-    const with_eqv = apply_eqv(with_includes);
-    return expand_macros(with_eqv);
+    // Host-side preprocessing is limited to include resolution.
+    // Macro and `.eqv` expansion now run in Zig for runtime parity.
+    return resolve_includes(source_text, base_dir, new Set());
 }
 
 function resolve_includes(source_text, base_dir, seen_paths) {
+    // Includes are expanded recursively with cycle suppression.
     const lines = source_text.split("\n");
     const output_lines = [];
     for (const line of lines) {
@@ -320,99 +453,8 @@ function resolve_includes(source_text, base_dir, seen_paths) {
     return output_lines.join("\n");
 }
 
-function apply_eqv(source_text) {
-    const lines = source_text.split("\n");
-    const eqv_map = new Map();
-    for (const line of lines) {
-        const trimmed = line.trim();
-        const match = trimmed.match(/^\.eqv\s+([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$/);
-        if (match) {
-            eqv_map.set(match[1], match[2].trim());
-        }
-    }
-
-    let output = source_text;
-    for (const [name, value] of eqv_map.entries()) {
-        const regex = new RegExp(`\\b${name}\\b`, "g");
-        output = output.replace(regex, value);
-    }
-    return output;
-}
-
-function expand_macros(source_text) {
-    const lines = source_text.split("\n");
-    const macros = new Map();
-    const body_lines = [];
-
-    let index = 0;
-    while (index < lines.length) {
-        const line = lines[index];
-        const trimmed = line.trim();
-        if (!trimmed.startsWith(".macro")) {
-            body_lines.push(line);
-            index += 1;
-            continue;
-        }
-
-        const header = trimmed;
-        const header_match = header.match(/^\.macro\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:\((.*)\))?$/);
-        if (!header_match) {
-            index += 1;
-            continue;
-        }
-        const macro_name = header_match[1];
-        const param_text = (header_match[2] ?? "").trim();
-        const params = param_text.length === 0 ? [] : param_text.split(",").map((p) => p.trim());
-
-        const macro_body = [];
-        index += 1;
-        while (index < lines.length && lines[index].trim() !== ".end_macro") {
-            macro_body.push(lines[index]);
-            index += 1;
-        }
-        if (index < lines.length && lines[index].trim() === ".end_macro") {
-            index += 1;
-        }
-
-        macros.set(macro_name, { params, body: macro_body });
-    }
-
-    const expanded_lines = [];
-    for (const line of body_lines) {
-        const trimmed = line.trim();
-        const call_match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*(?:\((.*)\))?$/);
-        if (!call_match) {
-            expanded_lines.push(line);
-            continue;
-        }
-        const macro_name = call_match[1];
-        const macro = macros.get(macro_name);
-        if (!macro) {
-            expanded_lines.push(line);
-            continue;
-        }
-
-        const arg_text = (call_match[2] ?? "").trim();
-        const args = arg_text.length === 0 ? [] : arg_text.split(",").map((a) => a.trim());
-        const replacements = new Map();
-        for (let i = 0; i < macro.params.length; i += 1) {
-            replacements.set(macro.params[i], args[i] ?? "");
-        }
-
-        for (const body_line of macro.body) {
-            let expanded = body_line;
-            for (const [param, value] of replacements.entries()) {
-                const escaped = param.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
-                expanded = expanded.replace(new RegExp(escaped, "g"), value);
-            }
-            expanded_lines.push(expanded);
-        }
-    }
-
-    return expanded_lines.join("\n");
-}
-
 function inject_program_args_setup(source_text, case_definition) {
+    // Program-args fixture support injects `.data` and main prologue setup.
     const extra = case_definition.mars_extra_args ?? [];
     const pa_index = extra.indexOf("pa");
     const args = pa_index >= 0 ? extra.slice(pa_index + 1) : [];
@@ -461,6 +503,7 @@ function inject_program_args_setup(source_text, case_definition) {
 }
 
 function ensure_wasm_memory_capacity(memory, required_bytes) {
+    // Grow linear memory proactively before creating typed views.
     if (required_bytes <= memory.buffer.byteLength) {
         return;
     }
@@ -469,6 +512,31 @@ function ensure_wasm_memory_capacity(memory, required_bytes) {
     const missing_bytes = required_bytes - memory.buffer.byteLength;
     const additional_pages = Math.ceil(missing_bytes / page_bytes);
     memory.grow(additional_pages);
+}
+
+function align_up_to_word(len_bytes) {
+    return (len_bytes + 3) & ~3;
+}
+
+function format_hex_u32(value) {
+    return `0x${(value >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function memory_range_option(base_addr, len_bytes) {
+    const aligned_len_bytes = align_up_to_word(len_bytes);
+    if (aligned_len_bytes === 0) {
+        return null;
+    }
+    const end_addr = (base_addr + aligned_len_bytes - 4) >>> 0;
+    return `${format_hex_u32(base_addr)}-${format_hex_u32(end_addr)}`;
+}
+
+function decode_u32_le(bytes, offset_bytes) {
+    const b0 = bytes[offset_bytes + 0];
+    const b1 = bytes[offset_bytes + 1];
+    const b2 = bytes[offset_bytes + 2];
+    const b3 = bytes[offset_bytes + 3];
+    return ((b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)) >>> 0);
 }
 
 function format_preview(text) {
@@ -492,20 +560,98 @@ function report_match() {
     console.log("  ok");
 }
 
+function expected_run_status_code(case_definition) {
+    // Runtime cases default to successful completion unless status is explicitly constrained.
+    return case_definition.expected_run_status_code ?? 0;
+}
+
+function expected_mars_error_kind(case_definition, expected_status) {
+    if (expected_status === 0) {
+        return "none";
+    }
+    // Most non-zero runtime status cases map to runtime exceptions in MARS command mode.
+    return case_definition.expected_mars_error_kind ?? "runtime";
+}
+
+function mars_detect_error_kind(mars_result) {
+    // Command-mode MARS emits diagnostics in stdout and can spill Java exceptions to stderr.
+    const merged_output = diagnostic_text_from_mars_result(mars_result);
+    if (merged_output.includes("Runtime exception")) {
+        return "runtime";
+    }
+    if (merged_output.includes("Processing terminated due to errors.")) {
+        return "parse";
+    }
+    return "none";
+}
+
 function refresh_goldens(selected_cases, mars_jar_path) {
+    // Golden refresh always uses MARS as the reference implementation.
     for (const case_definition of selected_cases) {
         report_case_header(case_definition);
         const mars_result = run_mars_case(case_definition, mars_jar_path);
+        const expected_status = expected_run_status_code(case_definition);
         write_golden_stdout(case_definition, mars_result.stdout);
-        console.log(`  refreshed: ${case_definition.expected_stdout_path}`);
+        if (expected_status === 0) {
+            console.log(`  refreshed: ${case_definition.expected_stdout_path}`);
+        }
+        if (expected_status !== 0 && case_definition.expected_diagnostic_path) {
+            write_golden_diagnostic(case_definition, diagnostic_text_from_mars_result(mars_result));
+            console.log(`  refreshed: ${case_definition.expected_diagnostic_path}`);
+        }
         if (mars_result.stderr.length > 0) {
             console.log(`  mars-stderr: ${format_preview(mars_result.stderr)}`);
         }
     }
 }
 
+function evaluate_mars_diagnostic_text(case_definition, mars_result) {
+    const expected_status = expected_run_status_code(case_definition);
+    if (expected_status === 0) {
+        return 0;
+    }
+
+    const expected_diagnostic = read_golden_diagnostic(case_definition);
+    if (case_definition.expected_diagnostic_path) {
+        if (expected_diagnostic === null) {
+            console.log("  missing diagnostic golden file");
+            return 1;
+        }
+        const actual_diagnostic = diagnostic_text_from_mars_result(mars_result);
+        if (actual_diagnostic !== expected_diagnostic) {
+            console.log("  mismatch: expected diagnostic text differs from MARS output");
+            console.log(`  expected: ${format_preview(expected_diagnostic)}`);
+            console.log(`  actual:   ${format_preview(actual_diagnostic)}`);
+            return 1;
+        }
+        return 0;
+    }
+
+    const expected_kind = expected_mars_error_kind(case_definition, expected_status);
+    const actual_kind = mars_detect_error_kind(mars_result);
+    if (actual_kind !== expected_kind) {
+        console.log(
+            `  mismatch: expected MARS error kind ${expected_kind} for status ${expected_status}, got ${actual_kind}`,
+        );
+        console.log(`  mars-stdout: ${format_preview(mars_result.stdout)}`);
+        console.log(`  mars-stderr: ${format_preview(mars_result.stderr)}`);
+        return 1;
+    }
+    return 0;
+}
+
 function evaluate_mars_case(case_definition, mars_jar_path) {
     const mars_result = run_mars_case(case_definition, mars_jar_path);
+    const expected_status = expected_run_status_code(case_definition);
+    if (expected_status !== 0) {
+        const diagnostic_failures = evaluate_mars_diagnostic_text(case_definition, mars_result);
+        if (diagnostic_failures > 0) {
+            return diagnostic_failures;
+        }
+        report_match();
+        return 0;
+    }
+
     const expected_stdout = read_golden_stdout(case_definition);
     if (expected_stdout === null) {
         console.log("  missing golden stdout file");
@@ -515,7 +661,6 @@ function evaluate_mars_case(case_definition, mars_jar_path) {
         report_mismatch(expected_stdout, mars_result.stdout);
         return 1;
     }
-
     report_match();
     if (mars_result.stderr.length > 0) {
         console.log(`  mars-stderr: ${format_preview(mars_result.stderr)}`);
@@ -529,17 +674,216 @@ function report_wasm_status(wasm_result) {
     );
 }
 
-function evaluate_wasm_case(case_definition, engine, wasm_exports) {
-    const wasm_result = run_wasm_case(case_definition, wasm_exports);
-    const expected_stdout = read_golden_stdout(case_definition);
-    if (expected_stdout === null) {
-        console.log("  missing golden stdout file");
-        return 1;
+function parse_mars_state_report(stdout_text) {
+    const int_regs = new Map();
+    const fp_regs = new Map();
+    const memory_words = new Map();
+
+    const lines = stdout_text.split(/\r?\n/);
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) continue;
+
+        if (trimmed.startsWith("$")) {
+            const tokens = trimmed.split(/\s+/);
+            if (tokens.length < 2) continue;
+            const register_name = tokens[0].slice(1);
+            const value_token = tokens[1];
+            if (!value_token.startsWith("0x")) continue;
+            const value = parseInt(value_token, 16) >>> 0;
+            if (/^f\d+$/.test(register_name)) {
+                fp_regs.set(register_name, value);
+            } else {
+                int_regs.set(register_name, value);
+            }
+            continue;
+        }
+
+        const memory_match = trimmed.match(/^Mem\[0x([0-9a-fA-F]+)\]\s*(.*)$/);
+        if (memory_match) {
+            const base_addr = parseInt(memory_match[1], 16) >>> 0;
+            const value_tokens = memory_match[2].match(/0x[0-9a-fA-F]{8}/g) ?? [];
+            for (let index = 0; index < value_tokens.length; index += 1) {
+                const addr = (base_addr + index * 4) >>> 0;
+                const value = parseInt(value_tokens[index], 16) >>> 0;
+                memory_words.set(addr, value);
+            }
+        }
     }
-    if (engine === "compare" && wasm_result.stdout !== expected_stdout) {
-        report_mismatch(expected_stdout, wasm_result.stdout);
+
+    return {
+        int_regs,
+        fp_regs,
+        memory_words,
+    };
+}
+
+function compare_memory_words(label, base_addr, wasm_bytes, mars_memory_words) {
+    let failures = 0;
+    const word_count = wasm_bytes.length / 4;
+    let mismatch_print_count = 0;
+    for (let word_index = 0; word_index < word_count; word_index += 1) {
+        const addr = (base_addr + word_index * 4) >>> 0;
+        const wasm_value = decode_u32_le(wasm_bytes, word_index * 4);
+        const mars_value = mars_memory_words.get(addr);
+        if (mars_value === undefined) {
+            if (mismatch_print_count < 4) {
+                console.log(
+                    `  mismatch: missing ${label} memory word at ${format_hex_u32(addr)} in MARS report`,
+                );
+                mismatch_print_count += 1;
+            }
+            failures += 1;
+            continue;
+        }
+        if (mars_value !== wasm_value) {
+            if (mismatch_print_count < 4) {
+                console.log(
+                    `  mismatch: ${label} memory ${format_hex_u32(addr)} expected ${format_hex_u32(mars_value)} got ${format_hex_u32(wasm_value)}`,
+                );
+                mismatch_print_count += 1;
+            }
+            failures += 1;
+        }
+    }
+    return failures;
+}
+
+function evaluate_state_parity(case_definition, mars_jar_path, wasm_result) {
+    if (case_definition.state_parity === false) {
+        return 0;
+    }
+    const expected_status = expected_run_status_code(case_definition);
+    if (expected_status !== 0) {
+        return 0;
+    }
+
+    const state = wasm_result.state_snapshot;
+    const integer_register_names = integer_register_specs.map((entry) => entry.name);
+    const mars_state_options = [...integer_register_names, ...floating_register_names];
+
+    const data_range = memory_range_option(
+        state.data_base_addr ?? data_segment_base_addr,
+        state.data_len_bytes,
+    );
+    if (data_range !== null) {
+        mars_state_options.push(data_range);
+    }
+
+    const heap_range = memory_range_option(
+        state.heap_base_addr ?? heap_segment_base_addr,
+        state.heap_len_bytes,
+    );
+    if (heap_range !== null) {
+        mars_state_options.push(heap_range);
+    }
+
+    const mars_state_result = run_mars_case(case_definition, mars_jar_path, mars_state_options);
+    const mars_state = parse_mars_state_report(mars_state_result.stdout);
+
+    let failures = 0;
+
+    for (const register_spec of integer_register_specs) {
+        const register_name = register_spec.name;
+        const mars_value = mars_state.int_regs.get(register_name);
+        if (mars_value === undefined) {
+            console.log(`  mismatch: missing integer register ${register_name} in MARS report`);
+            failures += 1;
+            continue;
+        }
+        const wasm_value = wasm_result.state_snapshot.int_regs[register_spec.index] >>> 0;
+        if (mars_value !== wasm_value) {
+            console.log(
+                `  mismatch: register ${register_name} expected ${format_hex_u32(mars_value)} got ${format_hex_u32(wasm_value)}`,
+            );
+            failures += 1;
+        }
+    }
+
+    for (let index = 0; index < floating_register_names.length; index += 1) {
+        const register_name = floating_register_names[index];
+        const mars_value = mars_state.fp_regs.get(register_name);
+        if (mars_value === undefined) {
+            console.log(`  mismatch: missing fp register ${register_name} in MARS report`);
+            failures += 1;
+            continue;
+        }
+        const wasm_value = wasm_result.state_snapshot.fp_regs[index] >>> 0;
+        if (mars_value !== wasm_value) {
+            console.log(
+                `  mismatch: fp register ${register_name} expected ${format_hex_u32(mars_value)} got ${format_hex_u32(wasm_value)}`,
+            );
+            failures += 1;
+        }
+    }
+
+    if (state.data_bytes.length > 0) {
+        failures += compare_memory_words(
+            "data",
+            state.data_base_addr ?? data_segment_base_addr,
+            state.data_bytes,
+            mars_state.memory_words,
+        );
+    }
+
+    if (state.heap_bytes.length > 0) {
+        failures += compare_memory_words(
+            "heap",
+            state.heap_base_addr ?? heap_segment_base_addr,
+            state.heap_bytes,
+            mars_state.memory_words,
+        );
+    }
+
+    if (failures > 0 && mars_state_result.stderr.length > 0) {
+        console.log(`  mars-stderr: ${format_preview(mars_state_result.stderr)}`);
+    }
+    return failures;
+}
+
+function evaluate_wasm_case(
+    case_definition,
+    engine,
+    wasm_exports,
+    mars_jar_path,
+    state_parity_enabled,
+) {
+    const wasm_result = run_wasm_case(case_definition, wasm_exports);
+    const expected_status = expected_run_status_code(case_definition);
+    if (wasm_result.run_status_code !== expected_status) {
+        console.log(
+            `  mismatch: expected run status ${expected_status} but got ${wasm_result.run_status_code}`,
+        );
         report_wasm_status(wasm_result);
         return 1;
+    }
+
+    if (expected_status === 0) {
+        const expected_stdout = read_golden_stdout(case_definition);
+        if (expected_stdout === null) {
+            console.log("  missing golden stdout file");
+            return 1;
+        }
+        if (engine === "compare" && wasm_result.stdout !== expected_stdout) {
+            report_mismatch(expected_stdout, wasm_result.stdout);
+            report_wasm_status(wasm_result);
+            return 1;
+        }
+        if (engine === "compare" && state_parity_enabled) {
+            const state_failures = evaluate_state_parity(case_definition, mars_jar_path, wasm_result);
+            if (state_failures > 0) {
+                report_wasm_status(wasm_result);
+                return state_failures;
+            }
+        }
+    } else if (engine === "compare") {
+        // Keep negative-case diagnostic golden checks strict in compare mode.
+        const mars_result = run_mars_case(case_definition, mars_jar_path);
+        const diagnostic_failures = evaluate_mars_diagnostic_text(case_definition, mars_result);
+        if (diagnostic_failures > 0) {
+            report_wasm_status(wasm_result);
+            return diagnostic_failures;
+        }
     }
 
     report_match();
@@ -560,6 +904,10 @@ async function prepare_wasm_exports(options, should_use_wasm) {
 }
 
 async function main() {
+    // Execution mode selection:
+    // - `mars`: verify goldens against MARS directly.
+    // - `wasm`: run wasm and compare to existing goldens.
+    // - `compare`: alias of wasm mode with compare semantics.
     const options = parse_args(process.argv.slice(2));
     const manifest = read_manifest(options.manifest_path);
     const selected_cases = select_cases(manifest, options.case_id);
@@ -583,7 +931,13 @@ async function main() {
         if (should_use_mars) {
             failures += evaluate_mars_case(case_definition, options.mars_jar_path);
         } else {
-            failures += evaluate_wasm_case(case_definition, options.engine, wasm_exports);
+            failures += evaluate_wasm_case(
+                case_definition,
+                options.engine,
+                wasm_exports,
+                options.mars_jar_path,
+                options.state_parity,
+            );
         }
     }
 

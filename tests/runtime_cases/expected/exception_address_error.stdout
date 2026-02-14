@@ -1,0 +1,4 @@
+Error in /Users/robertmorelli/Documents/personal-repos/zars/test_programs/exception_address_error.s line 12: Runtime exception at 0x0040000c: fetch address not aligned on word boundary 0x10010002
+
+Processing terminated due to errors.
+

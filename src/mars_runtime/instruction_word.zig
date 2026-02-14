@@ -21,6 +21,7 @@ pub const RFields = struct {
 };
 
 pub fn decode_r_fields(word: u32) RFields {
+    // Decode with explicit masks/shifts to mirror MIPS bit layout.
     const opcode: u6 = @intCast((word >> opcode_shift) & function_mask);
     const rs: u5 = @intCast((word >> 21) & 0x1F);
     const rt: u5 = @intCast((word >> 16) & 0x1F);
@@ -41,6 +42,7 @@ pub fn decode_r_fields(word: u32) RFields {
 }
 
 pub fn encode_syscall(code: u20) u32 {
+    // Syscall is an R-format instruction with funct=0x0C.
     return (@as(u32, code) << code_shift) | syscall_function;
 }
 
@@ -53,6 +55,7 @@ pub fn is_syscall(word: u32) bool {
 }
 
 pub fn encode_jump(target_word_index: u26) u32 {
+    // Jump immediate stores instruction word index, not byte address.
     const opcode_bits: u32 = @as(u32, j_opcode) << opcode_shift;
     return opcode_bits | @as(u32, target_word_index);
 }

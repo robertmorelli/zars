@@ -5,7 +5,9 @@
       "id": "integer_arithmetic",
       "description": "Integer ALU + HI/LO baseline",
       "program_path": "test_programs/integer_arithmetic.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/integer_arithmetic.stdout"
@@ -14,7 +16,9 @@
       "id": "bitwise_shift",
       "description": "Bitwise and shift instruction baseline",
       "program_path": "test_programs/bitwise_shift.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/bitwise_shift.stdout"
@@ -23,7 +27,9 @@
       "id": "memory_access",
       "description": "Load/store and sign extension",
       "program_path": "test_programs/memory_access.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/memory_access.stdout"
@@ -32,7 +38,9 @@
       "id": "control_flow",
       "description": "Loop, jump, and call control flow",
       "program_path": "test_programs/control_flow.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/control_flow.stdout"
@@ -41,7 +49,9 @@
       "id": "pseudo_ops",
       "description": "Pseudo-op expansion behavior",
       "program_path": "test_programs/pseudo_ops.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/pseudo_ops.stdout"
@@ -50,7 +60,9 @@
       "id": "macro_and_include",
       "description": "Macros, include files, and .eqv",
       "program_path": "test_programs/macro_and_include.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/macro_and_include.stdout"
@@ -59,7 +71,9 @@
       "id": "syscall_formatting",
       "description": "MARS formatting syscalls 34/35/36",
       "program_path": "test_programs/syscall_formatting.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/syscall_formatting.stdout"
@@ -68,7 +82,9 @@
       "id": "syscall_file_io",
       "description": "File open/read/write/close syscalls",
       "program_path": "test_programs/syscall_file_io.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/syscall_file_io.stdout"
@@ -77,7 +93,9 @@
       "id": "syscall_random_seed",
       "description": "Deterministic random stream with fixed seed",
       "program_path": "test_programs/syscall_random_seed.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/syscall_random_seed.stdout"
@@ -86,7 +104,9 @@
       "id": "floating_point",
       "description": "Coprocessor 1 arithmetic and branch",
       "program_path": "test_programs/floating_point.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/floating_point.stdout"
@@ -95,7 +115,9 @@
       "id": "delayed_branch_default",
       "description": "Delayed branch disabled baseline",
       "program_path": "test_programs/delayed_branch_probe.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/delayed_branch_default.stdout"
@@ -104,34 +126,170 @@
       "id": "delayed_branch_db",
       "description": "Delayed branch enabled behavior",
       "program_path": "test_programs/delayed_branch_probe.s",
-      "mars_options": ["db", "nc"],
+      "mars_options": [
+        "db",
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/delayed_branch_db.stdout"
     },
     {
+      "id": "delay_slot_pseudo_li_db",
+      "description": "Delayed-branch slot executes only first expansion word of multiword li pseudo-op",
+      "program_path": "test_programs/delay_slot_pseudo_li_db.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delay_slot_pseudo_li_db.stdout"
+    },
+    {
+      "id": "delay_slot_pseudo_mulu_db",
+      "description": "Delayed-branch slot executes only first expansion word of multiword mulu pseudo-op",
+      "program_path": "test_programs/delay_slot_pseudo_mulu_db.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delay_slot_pseudo_mulu_db.stdout"
+    },
+    {
+      "id": "delay_slot_pseudo_compare_abs_db",
+      "description": "Delayed-branch slot semantics for compare/abs pseudo-op expansion first-word execution",
+      "program_path": "test_programs/delay_slot_pseudo_compare_abs_db.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delay_slot_pseudo_compare_abs_db.stdout"
+    },
+    {
+      "id": "delay_slot_pseudo_arith_logic_db",
+      "description": "Delayed-branch slot semantics for arithmetic/logical pseudo immediate expansion first-word execution",
+      "program_path": "test_programs/delay_slot_pseudo_arith_logic_db.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delay_slot_pseudo_arith_logic_db.stdout"
+    },
+    {
+      "id": "delay_slot_pseudo_misc_db",
+      "description": "Delayed-branch slot semantics for additional pseudo-op families (la/rol/ror/mfc1.d/mtc1.d/mul/div/rem)",
+      "program_path": "test_programs/delay_slot_pseudo_misc_db.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delay_slot_pseudo_misc_db.stdout"
+    },
+    {
+      "id": "delay_slot_pseudo_div_reg_db",
+      "description": "Delayed-branch slot semantics for register-divisor div/divu/rem/remu pseudo-op first-word execution",
+      "program_path": "test_programs/delay_slot_pseudo_div_reg_db.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delay_slot_pseudo_div_reg_db.stdout"
+    },
+    {
       "id": "program_args",
       "description": "Program argument loading and argv traversal",
       "program_path": "test_programs/program_args.s",
-      "mars_options": ["nc"],
-      "mars_extra_args": ["pa", "alpha", "beta", "gamma"],
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [
+        "pa",
+        "alpha",
+        "beta",
+        "gamma"
+      ],
       "stdin_text": "",
-      "expected_stdout_path": "tests/runtime_cases/expected/program_args.stdout"
+      "expected_stdout_path": "tests/runtime_cases/expected/program_args.stdout",
+      "state_parity": false
     },
     {
       "id": "smc_patch_syscall_code",
       "description": "Text patching and non-zero syscall code field",
       "program_path": "test_programs/smc_patch_syscall_code.s",
-      "mars_options": ["smc", "nc"],
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_syscall_code.stdout"
     },
     {
+      "id": "smc_patch_basic_decode",
+      "description": "Patched machine-word decode for addi/ori/beq in SMC mode",
+      "program_path": "test_programs/smc_patch_basic_decode.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_basic_decode.stdout"
+    },
+    {
+      "id": "smc_patch_logic_shift",
+      "description": "Patched machine-word decode for logic and shift instructions in SMC mode",
+      "program_path": "test_programs/smc_patch_logic_shift.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_logic_shift.stdout"
+    },
+    {
+      "id": "smc_patch_load_store",
+      "description": "Patched machine-word decode for addi/andi/lw/sw in SMC mode",
+      "program_path": "test_programs/smc_patch_load_store.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_load_store.stdout"
+    },
+    {
+      "id": "smc_patch_branch_jal",
+      "description": "Patched machine-word decode for beq/bne/jal/jr in SMC mode",
+      "program_path": "test_programs/smc_patch_branch_jal.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_branch_jal.stdout"
+    },
+    {
       "id": "syscall_clear_screen",
       "description": "MARS extension syscall 60 smoke test",
       "program_path": "test_programs/syscall_clear_screen.s",
-      "mars_options": ["nc"],
+      "mars_options": [
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/syscall_clear_screen.stdout"
@@ -140,19 +298,751 @@
       "id": "project_mode",
       "description": "Multi-file project mode assembly and linking",
       "program_path": "test_programs/project_mode/main.s",
-      "mars_options": ["nc", "p"],
+      "mars_options": [
+        "nc",
+        "p"
+      ],
       "mars_extra_args": [],
       "stdin_text": "",
       "expected_stdout_path": "tests/runtime_cases/expected/project_mode.stdout"
     },
     {
+      "id": "immediate_logic",
+      "description": "Immediate arithmetic/logical instructions and comparisons",
+      "program_path": "test_programs/immediate_logic.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/immediate_logic.stdout"
+    },
+    {
+      "id": "shift_variable",
+      "description": "Variable shift instructions sllv/srlv/srav",
+      "program_path": "test_programs/shift_variable.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/shift_variable.stdout"
+    },
+    {
+      "id": "hi_lo_unsigned",
+      "description": "Unsigned HI/LO operations and explicit HI/LO moves",
+      "program_path": "test_programs/hi_lo_unsigned.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/hi_lo_unsigned.stdout"
+    },
+    {
+      "id": "branch_and_link_family",
+      "description": "Branch set and link-path behavior including jalr",
+      "program_path": "test_programs/branch_and_link_family.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/branch_and_link_family.stdout"
+    },
+    {
+      "id": "jalr_forms",
+      "description": "jalr single-operand and two-operand forms",
+      "program_path": "test_programs/jalr_forms.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/jalr_forms.stdout"
+    },
+    {
+      "id": "syscall_read_string",
+      "description": "Input syscall 8 read-string behavior",
+      "program_path": "test_programs/syscall_read_string.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "hello\n",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_read_string.stdout"
+    },
+    {
+      "id": "syscall_read_char",
+      "description": "Input syscall 12 read-char behavior",
+      "program_path": "test_programs/syscall_read_char.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "Q",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_read_char.stdout"
+    },
+    {
+      "id": "syscall_read_float_double",
+      "description": "Input syscalls 6 and 7 plus output formatting 2 and 3",
+      "program_path": "test_programs/syscall_read_float_double.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "1.5\n2.25\n",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_read_float_double.stdout"
+    },
+    {
+      "id": "syscall_sbrk_heap",
+      "description": "Heap allocation and heap memory access through syscall 9",
+      "program_path": "test_programs/syscall_sbrk_heap.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_sbrk_heap.stdout"
+    },
+    {
+      "id": "directive_ascii_align",
+      "description": "Data directives .ascii and .align layout semantics",
+      "program_path": "test_programs/directive_ascii_align.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/directive_ascii_align.stdout"
+    },
+    {
+      "id": "delayed_branch_nested_db",
+      "description": "Nested delayed-branch behavior when delay slot also branches",
+      "program_path": "test_programs/delayed_branch_nested.s",
+      "mars_options": [
+        "db",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/delayed_branch_nested_db.stdout"
+    },
+    {
+      "id": "memory_partial_words",
+      "description": "Partial-word memory instructions ll/sc/lwl/lwr/swl/swr",
+      "program_path": "test_programs/memory_partial_words.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/memory_partial_words.stdout"
+    },
+    {
+      "id": "fp_condition_flags",
+      "description": "Coprocessor 1 condition flags with bc1t/bc1f variants",
+      "program_path": "test_programs/fp_condition_flags.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/fp_condition_flags.stdout"
+    },
+    {
+      "id": "fp_round_convert",
+      "description": "Floating-point floor/ceil/round/trunc and cvt instruction family",
+      "program_path": "test_programs/fp_round_convert.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/fp_round_convert.stdout"
+    },
+    {
+      "id": "fp_move_and_transfer",
+      "description": "Floating-point move conditions plus mfc1/mtc1 transfer behavior",
+      "program_path": "test_programs/fp_move_and_transfer.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/fp_move_and_transfer.stdout"
+    },
+    {
+      "id": "cp0_eret",
+      "description": "Coprocessor 0 transfers and eret control-flow behavior",
+      "program_path": "test_programs/cp0_eret.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/cp0_eret.stdout"
+    },
+    {
+      "id": "trap_family",
+      "description": "Trap instruction family non-trapping comparison paths",
+      "program_path": "test_programs/trap_family.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/trap_family.stdout"
+    },
+    {
+      "id": "multiply_accumulate",
+      "description": "mul/madd/maddu/msub/msubu and leading-bit count instructions",
+      "program_path": "test_programs/multiply_accumulate.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/multiply_accumulate.stdout"
+    },
+    {
       "id": "smc_advanced",
       "description": "Advanced SMC state-machine fizzbuzz",
       "program_path": "test_programs/smc.s",
-      "mars_options": ["smc", "nc"],
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
       "mars_extra_args": [],
       "stdin_text": "20\n",
       "expected_stdout_path": "tests/runtime_cases/expected/smc_advanced.stdout"
+    },
+    {
+      "id": "syscall_exit2",
+      "description": "Exit2 syscall 17 command-mode termination",
+      "program_path": "test_programs/syscall_exit2.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_exit2.stdout"
+    },
+    {
+      "id": "syscall_time",
+      "description": "Time syscall 30 register update smoke",
+      "program_path": "test_programs/syscall_time.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_time.stdout",
+      "state_parity": false
+    },
+    {
+      "id": "syscall_midi_sleep",
+      "description": "MidiOut/MidiOutSync/Sleep syscall family smoke",
+      "program_path": "test_programs/syscall_midi_sleep.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_midi_sleep.stdout"
+    },
+    {
+      "id": "directive_compat_kernel_segments",
+      "description": "Directive compatibility for .globl and .extern",
+      "program_path": "test_programs/directive_compat_kernel_segments.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/directive_compat_kernel_segments.stdout"
+    },
+    {
+      "id": "syscall_dialog_50",
+      "description": "Headless command-mode behavior for dialog syscall 50",
+      "program_path": "test_programs/syscall_dialog_50.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_50.stdout"
+    },
+    {
+      "id": "syscall_dialog_51",
+      "description": "Headless command-mode behavior for dialog syscall 51",
+      "program_path": "test_programs/syscall_dialog_51.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_51.stdout"
+    },
+    {
+      "id": "syscall_dialog_52",
+      "description": "Headless command-mode behavior for dialog syscall 52",
+      "program_path": "test_programs/syscall_dialog_52.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_52.stdout"
+    },
+    {
+      "id": "syscall_dialog_53",
+      "description": "Headless command-mode behavior for dialog syscall 53",
+      "program_path": "test_programs/syscall_dialog_53.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_53.stdout"
+    },
+    {
+      "id": "syscall_dialog_54",
+      "description": "Headless command-mode behavior for dialog syscall 54",
+      "program_path": "test_programs/syscall_dialog_54.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_54.stdout"
+    },
+    {
+      "id": "syscall_dialog_55",
+      "description": "Headless command-mode behavior for dialog syscall 55",
+      "program_path": "test_programs/syscall_dialog_55.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_55.stdout"
+    },
+    {
+      "id": "syscall_dialog_56",
+      "description": "Headless command-mode behavior for dialog syscall 56",
+      "program_path": "test_programs/syscall_dialog_56.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_56.stdout"
+    },
+    {
+      "id": "syscall_dialog_57",
+      "description": "Headless command-mode behavior for dialog syscall 57",
+      "program_path": "test_programs/syscall_dialog_57.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_57.stdout"
+    },
+    {
+      "id": "syscall_dialog_58",
+      "description": "Headless command-mode behavior for dialog syscall 58",
+      "program_path": "test_programs/syscall_dialog_58.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_58.stdout"
+    },
+    {
+      "id": "syscall_dialog_59",
+      "description": "Headless command-mode behavior for dialog syscall 59",
+      "program_path": "test_programs/syscall_dialog_59.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_dialog_59.stdout"
+    },
+    {
+      "id": "pseudo_ops_more",
+      "description": "Additional pseudo-op coverage for branch/store/arithmetic aliases",
+      "program_path": "test_programs/pseudo_ops_more.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_ops_more.stdout"
+    },
+    {
+      "id": "pseudo_branches_math",
+      "description": "Pseudo-op aliases for branch/compare/arithmetic families",
+      "program_path": "test_programs/pseudo_branches_math.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_branches_math.stdout"
+    },
+    {
+      "id": "pseudo_unaligned_and_pair",
+      "description": "Pseudo-op aliases for unaligned memory and pair transfers",
+      "program_path": "test_programs/pseudo_unaligned_and_pair.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_unaligned_and_pair.stdout"
+    },
+    {
+      "id": "address_expression_forms",
+      "description": "Address expression forms for la/lw/sw with label+offset and base combinations",
+      "program_path": "test_programs/address_expression_forms.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/address_expression_forms.stdout"
+    },
+    {
+      "id": "pseudo_layout_counts",
+      "description": "Pseudo-op text-layout byte counts via label address deltas",
+      "program_path": "test_programs/pseudo_layout_counts.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_layout_counts.stdout"
+    },
+    {
+      "id": "pseudo_layout_counts_more",
+      "description": "Additional pseudo-op layout byte-count probes",
+      "program_path": "test_programs/pseudo_layout_counts_more.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_layout_counts_more.stdout"
+    },
+    {
+      "id": "pseudo_layout_counts_expanded",
+      "description": "Expanded pseudo-op layout probes for immediate-width and unaligned families",
+      "program_path": "test_programs/pseudo_layout_counts_expanded.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_layout_counts_expanded.stdout"
+    },
+    {
+      "id": "pseudo_div_rem_forms",
+      "description": "Pseudo div/rem family execution including immediate-zero HI/LO carry semantics",
+      "program_path": "test_programs/pseudo_div_rem_forms.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/pseudo_div_rem_forms.stdout"
+    },
+    {
+      "id": "smc_patch_integer_hilo",
+      "description": "Patched machine-word decode for core integer, HI/LO, and SPECIAL2 paths",
+      "program_path": "test_programs/smc_patch_integer_hilo.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_integer_hilo.stdout"
+    },
+    {
+      "id": "smc_patch_regimm_branches",
+      "description": "Patched machine-word decode for REGIMM plus blez/bgtz branch families",
+      "program_path": "test_programs/smc_patch_regimm_branches.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_regimm_branches.stdout"
+    },
+    {
+      "id": "smc_patch_partial_memory",
+      "description": "Patched machine-word decode for byte/halfword and partial-word memory instructions",
+      "program_path": "test_programs/smc_patch_partial_memory.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_partial_memory.stdout"
+    },
+    {
+      "id": "smc_patch_trap_cp0",
+      "description": "Patched machine-word decode for movn/movz, trap family, and CP0 eret path",
+      "program_path": "test_programs/smc_patch_trap_cp0.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_trap_cp0.stdout"
+    },
+    {
+      "id": "smc_patch_cop1_transfer_branch",
+      "description": "Patched machine-word decode for COP1 transfer, memory transfer, and bc1 branch forms",
+      "program_path": "test_programs/smc_patch_cop1_transfer_branch.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_cop1_transfer_branch.stdout"
+    },
+    {
+      "id": "smc_patch_cop1_arith_convert",
+      "description": "Patched machine-word decode for COP1 arithmetic, conversion, and compare paths",
+      "program_path": "test_programs/smc_patch_cop1_arith_convert.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_cop1_arith_convert.stdout"
+    },
+    {
+      "id": "smc_patch_special2_madd",
+      "description": "Patched machine-word decode for SPECIAL2 madd/maddu/msub/msubu",
+      "program_path": "test_programs/smc_patch_special2_madd.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_special2_madd.stdout"
+    },
+    {
+      "id": "fp_missing_ops",
+      "description": "Covers remaining COP1 arithmetic, move, compare, and explicit memory mnemonics",
+      "program_path": "test_programs/fp_missing_ops.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/fp_missing_ops.stdout"
+    },
+    {
+      "id": "mulou_coverage",
+      "description": "mulou pseudo-op reg/reg and reg/immediate forms",
+      "program_path": "test_programs/mulou_coverage.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/mulou_coverage.stdout"
+    },
+    {
+      "id": "break_runtime_error",
+      "description": "break mnemonic parse/assembly coverage in unreachable control-flow slot",
+      "program_path": "test_programs/break_runtime_error.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/break_runtime_error.stdout"
+    },
+    {
+      "id": "smc_patch_invalid_regimm_rt",
+      "description": "Patched-word REGIMM decode rejects unsupported rt selector",
+      "program_path": "test_programs/smc_patch_invalid_regimm_rt.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_regimm_rt.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_regimm_rt.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_cop0_rs",
+      "description": "Patched-word COP0 decode rejects unsupported rs selector",
+      "program_path": "test_programs/smc_patch_invalid_cop0_rs.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_cop0_rs.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_cop0_rs.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_cop1_branch_likely",
+      "description": "Patched-word COP1 branch decode rejects likely-form rt selectors",
+      "program_path": "test_programs/smc_patch_invalid_cop1_branch_likely.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_branch_likely.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_branch_likely.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_cop1_fmt_s_funct",
+      "description": "Patched-word COP1 fmt.s decode rejects unsupported funct selector",
+      "program_path": "test_programs/smc_patch_invalid_cop1_fmt_s_funct.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_fmt_s_funct.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_fmt_s_funct.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_cop1_fmt_d_funct",
+      "description": "Patched-word COP1 fmt.d decode rejects unsupported funct selector",
+      "program_path": "test_programs/smc_patch_invalid_cop1_fmt_d_funct.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_fmt_d_funct.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_fmt_d_funct.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_cop1_fmt_w_funct",
+      "description": "Patched-word COP1 fmt.w decode rejects unsupported funct selector",
+      "program_path": "test_programs/smc_patch_invalid_cop1_fmt_w_funct.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_fmt_w_funct.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_fmt_w_funct.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_cop1_rs",
+      "description": "Patched-word COP1 decode rejects unsupported rs selector",
+      "program_path": "test_programs/smc_patch_invalid_cop1_rs.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_rs.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_cop1_rs.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_primary_opcode",
+      "description": "Patched-word decode rejects unsupported primary opcode",
+      "program_path": "test_programs/smc_patch_invalid_primary_opcode.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_primary_opcode.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_primary_opcode.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "exception_address_error",
+      "description": "Unaligned load raises address runtime exception",
+      "program_path": "test_programs/exception_address_error.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/exception_address_error.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/exception_address_error.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "parse_unknown_mnemonic",
+      "description": "Source parse rejects unknown mnemonic token",
+      "program_path": "test_programs/parse_unknown_mnemonic.s",
+      "mars_options": [
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/parse_unknown_mnemonic.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/parse_unknown_mnemonic.diagnostic",
+      "expected_run_status_code": 3,
+      "expected_mars_error_kind": "parse"
+    },
+    {
+      "id": "smc_patch_invalid_special_funct",
+      "description": "Patched-word SPECIAL decode rejects unsupported funct selector",
+      "program_path": "test_programs/smc_patch_invalid_special_funct.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_special_funct.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_special_funct.diagnostic",
+      "expected_run_status_code": 5
+    },
+    {
+      "id": "smc_patch_invalid_special2_funct",
+      "description": "Patched-word SPECIAL2 decode rejects unsupported funct selector",
+      "program_path": "test_programs/smc_patch_invalid_special2_funct.s",
+      "mars_options": [
+        "smc",
+        "nc"
+      ],
+      "mars_extra_args": [],
+      "stdin_text": "",
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_invalid_special2_funct.stdout",
+      "expected_diagnostic_path": "tests/runtime_cases/expected/smc_patch_invalid_special2_funct.diagnostic",
+      "expected_run_status_code": 5
     }
   ]
 }

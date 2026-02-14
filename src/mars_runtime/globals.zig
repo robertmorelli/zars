@@ -13,6 +13,7 @@ pub const maximum_backsteps: u32 = 1_000;
 pub const ascii_non_print = ".";
 
 pub fn validate_invariants() void {
+    // Keep these assertions local so config regressions fail during startup.
     assert(maximum_message_characters > 0);
     assert(maximum_error_messages > 0);
     assert(maximum_backsteps > 0);
