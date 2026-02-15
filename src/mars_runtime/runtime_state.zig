@@ -9,6 +9,7 @@ pub const StatusCode = enum(u32) {
     parse_error = 3,
     halted = 4,
     runtime_error = 5,
+    needs_input = 6,
 };
 
 pub const program_capacity_bytes: u32 = 1024 * 1024;
@@ -27,6 +28,8 @@ pub const RuntimeState = struct {
     delayed_branching_enabled: bool = false,
     smc_enabled: bool = false,
     input_len_bytes: u32 = 0,
+    /// Watermark for incremental output reads. Tracks how far the host has read.
+    output_read_offset_bytes: u32 = 0,
 
     pub fn reset(self: *RuntimeState) void {
         // Reset both metadata and backing buffers between runs.
@@ -36,6 +39,7 @@ pub const RuntimeState = struct {
         self.delayed_branching_enabled = false;
         self.smc_enabled = false;
         self.input_len_bytes = 0;
+        self.output_read_offset_bytes = 0;
         @memset(program_storage[0..], 0);
         @memset(output_storage[0..], 0);
         @memset(input_storage[0..], 0);
@@ -120,6 +124,47 @@ pub const RuntimeState = struct {
         self.last_status_code = map_engine_status(status);
         return self.last_status_code;
     }
+
+    /// Run at full speed until the program halts, errors, or needs input.
+    pub fn run_until_input(self: *RuntimeState) StatusCode {
+        const status = engine.run_until_input();
+        self.output_len_bytes = engine.step_output_len();
+        self.last_status_code = map_engine_status(status);
+        return self.last_status_code;
+    }
+
+    /// Append input bytes. Host writes new bytes at input_storage[old_len..old_len+additional_len],
+    /// then calls this to extend the active input window without resetting the read cursor.
+    pub fn append_input(self: *RuntimeState, additional_len: u32) StatusCode {
+        const new_total = self.input_len_bytes + additional_len;
+        if (new_total > input_capacity_bytes) {
+            self.last_status_code = .invalid_program_length;
+            return self.last_status_code;
+        }
+        self.input_len_bytes = new_total;
+        // Update the engine's input slice to reflect the new length.
+        engine.update_input_slice(input_storage[0..new_total]);
+        self.last_status_code = .ok;
+        return self.last_status_code;
+    }
+
+    /// Returns how many input bytes have been consumed by the program so far.
+    pub fn input_consumed_bytes(_: *const RuntimeState) u32 {
+        return engine.snapshot_input_offset_bytes();
+    }
+
+    /// Returns the number of new output bytes since the last call to this function.
+    /// Advances the read watermark.
+    pub fn consume_new_output(self: *RuntimeState) u32 {
+        const new_bytes = self.output_len_bytes - self.output_read_offset_bytes;
+        self.output_read_offset_bytes = self.output_len_bytes;
+        return new_bytes;
+    }
+
+    /// Returns the byte offset where new (unconsumed) output starts.
+    pub fn new_output_offset(self: *const RuntimeState) u32 {
+        return self.output_read_offset_bytes;
+    }
 };
 
 fn map_engine_status(status: engine.StatusCode) StatusCode {
@@ -129,6 +174,7 @@ fn map_engine_status(status: engine.StatusCode) StatusCode {
         .parse_error => .parse_error,
         .runtime_error => .runtime_error,
         .halted => .halted,
+        .needs_input => .needs_input,
     };
 }
 

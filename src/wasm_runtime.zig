@@ -142,3 +142,31 @@ pub export fn zars_step() u32 {
 pub export fn zars_instruction_count() u32 {
     return engine.snapshot_instruction_count();
 }
+
+/// Run at full speed until halt, error, or needs_input (status 6).
+pub export fn zars_run_until_input() u32 {
+    const status = runtime.runtime_state.run_until_input();
+    return @intFromEnum(status);
+}
+
+/// Append additional input bytes. Host writes new bytes starting at
+/// input_ptr() + current input_len, then calls this with the number of new bytes.
+pub export fn zars_append_input(additional_len: u32) u32 {
+    const status = runtime.runtime_state.append_input(additional_len);
+    return @intFromEnum(status);
+}
+
+/// Returns how many input bytes the program has consumed so far.
+pub export fn zars_input_consumed_bytes() u32 {
+    return runtime.runtime_state.input_consumed_bytes();
+}
+
+/// Returns the number of new output bytes since last call, and advances the watermark.
+pub export fn zars_output_since_last() u32 {
+    return runtime.runtime_state.consume_new_output();
+}
+
+/// Returns the byte offset in output_storage where new (unconsumed) output starts.
+pub export fn zars_new_output_offset() u32 {
+    return runtime.runtime_state.new_output_offset();
+}

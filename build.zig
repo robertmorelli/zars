@@ -111,6 +111,13 @@ pub fn build(b: *std.Build) void {
     const wasm_runtime_step = b.step("wasm-runtime", "Build the WebAssembly runtime artifact");
     wasm_runtime_step.dependOn(&install_wasm_runtime.step);
 
+    // Run the runtime test suite (final-state comparison against MARS).
+    // Depends on the WASM runtime being built first.
+    const turbo_test_cmd = b.addSystemCommand(&.{ "node", "tools/runtime_main.mjs" });
+    turbo_test_cmd.step.dependOn(&install_wasm_runtime.step);
+    const turbo_test_step = b.step("turbo_test", "Run runtime test suite (final-state comparison vs MARS)");
+    turbo_test_step.dependOn(&turbo_test_cmd.step);
+
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
     // This will evaluate the `run` step rather than the default step.

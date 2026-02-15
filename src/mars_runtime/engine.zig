@@ -258,6 +258,12 @@ pub fn step_execution() StatusCode {
         const instruction = parsed.instructions[current_pc];
         status = execute_instruction(parsed, state, &instruction, step_output_buffer, &step_output_len_bytes);
     }
+    if (status == .needs_input) {
+        // Rewind PC so the syscall instruction re-executes after input is supplied.
+        state.pc = current_pc;
+        step_count -= 1;
+        return .needs_input;
+    }
     if (status != .ok) return status;
 
     // Delayed branch sequencing.
@@ -275,6 +281,29 @@ pub fn step_execution() StatusCode {
     }
 
     return .ok;
+}
+
+/// Run at full speed until the program halts, errors, or needs input.
+/// Returns: halted, runtime_error, or needs_input.
+pub fn run_until_input() StatusCode {
+    while (true) {
+        const status = step_execution();
+        switch (status) {
+            .ok => continue,
+            .needs_input, .halted, .runtime_error, .parse_error => return status,
+        }
+    }
+}
+
+/// Update the input slice to reflect newly appended bytes.
+/// Called after the host writes additional bytes to input_storage.
+pub fn update_input_slice(new_input: []const u8) void {
+    exec_state_storage.input_text = new_input;
+}
+
+/// Get the current input consumption offset.
+pub fn snapshot_input_offset_bytes() u32 {
+    return exec_state_storage.input_offset_bytes;
 }
 
 /// Get the current output length (for step mode).
@@ -670,13 +699,13 @@ fn try_expand_pseudo_op(parsed: *Program, instruction: *const LineInstruction) b
         // li $t1,100    -> ori RG1, $0, VL2U    (zero-extended unsigned)
         // li $t1,100000 -> lui $1, VHL2; ori RG1, $1, VL2U (32-bit)
 
-        // If negative, use addiu (sign-extend)
-        if (imm < 0) {
+        // If negative and fits in signed 16 bits, use addiu (sign-extend)
+        if (imm >= std.math.minInt(i16) and imm < 0) {
             return emit_instruction(parsed, "addiu", &[_][]const u8{ rd_text, "$zero", imm_text });
         }
 
-        // If positive and fits unsigned 16 bits, use ori
-        if (imm <= std.math.maxInt(u16)) {
+        // If non-negative and fits unsigned 16 bits, use ori
+        if (imm >= 0 and imm <= std.math.maxInt(u16)) {
             return emit_instruction(parsed, "ori", &[_][]const u8{ rd_text, "$zero", imm_text });
         }
 
@@ -5469,24 +5498,28 @@ fn execute_syscall(
     }
 
     if (v0 == 5) {
+        if (input_exhausted_for_token(state)) return .needs_input;
         const value = read_next_input_int(state) orelse return .runtime_error;
         write_reg(state, 2, value);
         return .ok;
     }
 
     if (v0 == 6) {
+        if (input_exhausted_for_token(state)) return .needs_input;
         const value = read_next_input_float(state) orelse return .runtime_error;
         write_fp_single(state, 0, @bitCast(value));
         return .ok;
     }
 
     if (v0 == 7) {
+        if (input_exhausted_for_token(state)) return .needs_input;
         const value = read_next_input_double(state) orelse return .runtime_error;
         write_fp_double(state, 0, @bitCast(value));
         return .ok;
     }
 
     if (v0 == 8) {
+        if (input_exhausted_at_eof(state)) return .needs_input;
         const buffer_address: u32 = @bitCast(read_reg(state, 4));
         const length = read_reg(state, 5);
         if (!syscall_read_string(parsed, state, buffer_address, length)) return .runtime_error;
@@ -5515,6 +5548,7 @@ fn execute_syscall(
     }
 
     if (v0 == 12) {
+        if (input_exhausted_at_eof(state)) return .needs_input;
         const ch = read_next_input_char(state) orelse return .runtime_error;
         write_reg(state, 2, ch);
         return .ok;
@@ -6056,6 +6090,21 @@ fn write_u32_be(parsed: *Program, address: u32, value: u32) bool {
         write_u8(parsed, address + 1, @intCast((value >> 8) & 0xFF)) and
         write_u8(parsed, address + 2, @intCast((value >> 16) & 0xFF)) and
         write_u8(parsed, address + 3, @intCast((value >> 24) & 0xFF));
+}
+
+/// Returns true when all remaining input (from current offset) is whitespace or empty.
+/// Used by token-reading syscalls (5/6/7) to distinguish "no input available" from "parse error".
+fn input_exhausted_for_token(state: *const ExecState) bool {
+    const input_text = state.input_text;
+    var index: usize = @intCast(state.input_offset_bytes);
+    while (index < input_text.len and std.ascii.isWhitespace(input_text[index])) : (index += 1) {}
+    return index >= input_text.len;
+}
+
+/// Returns true when input offset is at or past the end of available input.
+/// Used by byte-level syscalls (8/12) that don't skip whitespace.
+fn input_exhausted_at_eof(state: *const ExecState) bool {
+    return state.input_offset_bytes >= state.input_text.len;
 }
 
 fn read_next_input_int(state: *ExecState) ?i32 {
@@ -7258,6 +7307,61 @@ test "engine estimates sne pseudo word counts from label deltas" {
 
     try std.testing.expectEqual(StatusCode.ok, result.status);
     try std.testing.expectEqualStrings("8\n12\n16\n", out[0..result.output_len_bytes]);
+}
+
+test "engine li with bit-31-set immediates expands to two words matching MARS" {
+    // li with 32-bit hex values where bit 31 is set (negative as i32) must
+    // expand to lui+ori (2 words), not addiu (which would miscount words and
+    // shift all subsequent label addresses).
+    const program =
+        \\.text
+        \\main:
+        \\    la   $t0, after_zero_low
+        \\    la   $t1, before_zero_low
+        \\    subu $a0, $t0, $t1
+        \\    li   $v0, 1
+        \\    syscall
+        \\    li   $v0, 11
+        \\    li   $a0, 10
+        \\    syscall
+        \\    la   $t0, after_nonzero_low
+        \\    la   $t1, before_nonzero_low
+        \\    subu $a0, $t0, $t1
+        \\    li   $v0, 1
+        \\    syscall
+        \\    li   $v0, 11
+        \\    li   $a0, 10
+        \\    syscall
+        \\    li   $v0, 34
+        \\    move $a0, $t8
+        \\    syscall
+        \\    li   $v0, 11
+        \\    li   $a0, 10
+        \\    syscall
+        \\    li   $v0, 34
+        \\    move $a0, $t9
+        \\    syscall
+        \\    li   $v0, 10
+        \\    syscall
+        \\before_zero_low:
+        \\    li   $t8, 0x82080000
+        \\after_zero_low:
+        \\before_nonzero_low:
+        \\    li   $t9, 0x92090001
+        \\after_nonzero_low:
+    ;
+
+    var out: [128]u8 = undefined;
+    const result = run_program(program, out[0..], .{
+        .delayed_branching_enabled = false,
+        .smc_enabled = false,
+        .input_text = "",
+    });
+
+    try std.testing.expectEqual(StatusCode.ok, result.status);
+    // Each li should occupy 2 words = 8 bytes.
+    // The loaded values must also be correct.
+    try std.testing.expectEqualStrings("8\n8\n0x82080000\n0x92090001\n", out[0..result.output_len_bytes]);
 }
 
 test "engine executes patched integer and hilo decode families" {
