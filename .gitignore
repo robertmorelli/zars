@@ -1,0 +1,22 @@
+# Zig build artifacts
+zig-cache/
+zig-out/
+.zig-cache/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Built binary
+/zars
+/zars.exe
+*.o
+*.a
+*.so
+*.dylib
+
+# IDE
+.vscode/settings.json
+.vscode/launch.json
