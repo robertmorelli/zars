@@ -21,6 +21,7 @@ pub const StatusCode = enum(u32) {
     ok = 0,
     parse_error = 1,
     runtime_error = 3,
+    halted = 4,
 };
 
 pub const Label = struct {

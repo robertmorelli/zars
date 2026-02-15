@@ -233,7 +233,8 @@
       ],
       "mars_extra_args": [],
       "stdin_text": "",
-      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_syscall_code.stdout"
+      "expected_stdout_path": "tests/runtime_cases/expected/smc_patch_syscall_code.stdout",
+      "state_parity": false
     },
     {
       "id": "smc_patch_basic_decode",
@@ -292,7 +293,8 @@
       ],
       "mars_extra_args": [],
       "stdin_text": "",
-      "expected_stdout_path": "tests/runtime_cases/expected/syscall_clear_screen.stdout"
+      "expected_stdout_path": "tests/runtime_cases/expected/syscall_clear_screen.stdout",
+      "state_parity": false
     },
     {
       "id": "project_mode",

@@ -56,6 +56,26 @@ pub export fn zars_fp_regs_ptr() u32 {
     return @intCast(@intFromPtr(&engine.snapshot_fp_regs()[0]));
 }
 
+pub export fn zars_hi() i32 {
+    return engine.snapshot_hi();
+}
+
+pub export fn zars_lo() i32 {
+    return engine.snapshot_lo();
+}
+
+pub export fn zars_pc() u32 {
+    return engine.snapshot_pc();
+}
+
+pub export fn zars_halted() u32 {
+    return if (engine.snapshot_halted()) 1 else 0;
+}
+
+pub export fn zars_fp_condition_flags() u8 {
+    return engine.snapshot_fp_condition_flags();
+}
+
 pub export fn zars_data_ptr() u32 {
     return @intCast(@intFromPtr(&engine.snapshot_data_bytes()[0]));
 }
@@ -102,4 +122,23 @@ pub export fn zars_set_input_len_bytes(len_bytes: u32) u32 {
 pub export fn zars_run() u32 {
     const status = runtime.runtime_state.run();
     return @intFromEnum(status);
+}
+
+/// Initialize execution for step-by-step mode. Call after zars_load_program.
+/// Returns status code (0 = ok, ready to step).
+pub export fn zars_start() u32 {
+    const status = runtime.runtime_state.start();
+    return @intFromEnum(status);
+}
+
+/// Execute exactly one instruction.
+/// Returns status code: 0 = ok (still running), 4 = halted (program exited), 5 = error.
+pub export fn zars_step() u32 {
+    const status = runtime.runtime_state.step();
+    return @intFromEnum(status);
+}
+
+/// Get the instruction count (for bounds checking / progress tracking).
+pub export fn zars_instruction_count() u32 {
+    return engine.snapshot_instruction_count();
 }

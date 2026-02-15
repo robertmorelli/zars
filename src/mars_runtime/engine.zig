@@ -40,6 +40,51 @@ const ExecState = model.ExecState;
 var parsed_program_storage: Program = undefined;
 var exec_state_storage: ExecState = undefined;
 
+// Step execution state - persists between step calls.
+var step_output_buffer: []u8 = &[_]u8{};
+var step_output_len_bytes: u32 = 0;
+var step_count: u32 = 0;
+var step_initialized: bool = false;
+
+// MARS-compatible initial register values.
+// $gp (28) = 0x10008000, $sp (29) = 0x7fffeffc
+fn init_integer_registers() [32]i32 {
+    var regs = [_]i32{0} ** 32;
+    regs[28] = @bitCast(@as(u32, 0x10008000)); // $gp
+    regs[29] = @bitCast(@as(u32, 0x7fffeffc)); // $sp
+    return regs;
+}
+
+/// Emit a basic MIPS instruction during pseudo-op expansion.
+/// Returns false if instruction array is full.
+fn emit_instruction(parsed: *Program, op: []const u8, operands: []const []const u8) bool {
+    if (parsed.instruction_count >= max_instruction_count) return false;
+
+    var instruction = LineInstruction{
+        .op = [_]u8{0} ** max_token_len,
+        .op_len = 0,
+        .operands = [_][max_token_len]u8{[_]u8{0} ** max_token_len} ** 3,
+        .operand_lens = [_]u8{0} ** 3,
+        .operand_count = 0,
+    };
+
+    if (op.len > max_token_len) return false;
+    @memcpy(instruction.op[0..op.len], op);
+    instruction.op_len = @intCast(op.len);
+
+    if (operands.len > 3) return false;
+    for (operands, 0..) |operand, i| {
+        if (operand.len > max_token_len) return false;
+        @memcpy(instruction.operands[i][0..operand.len], operand);
+        instruction.operand_lens[i] = @intCast(operand.len);
+    }
+    instruction.operand_count = @intCast(operands.len);
+
+    parsed.instructions[parsed.instruction_count] = instruction;
+    parsed.instruction_count += 1;
+    return true;
+}
+
 pub fn run_program(program_text: []const u8, output: []u8, options: EngineOptions) RunResult {
     // Parsing and execution share static storage to keep the runtime allocator-free.
     const preprocessed_text = source_preprocess.preprocess_source(program_text) orelse {
@@ -77,6 +122,164 @@ pub fn snapshot_heap_bytes() *const [heap_capacity_bytes]u8 {
 
 pub fn snapshot_heap_len_bytes() u32 {
     return exec_state_storage.heap_len_bytes;
+}
+
+pub fn snapshot_hi() i32 {
+    return exec_state_storage.hi;
+}
+
+pub fn snapshot_lo() i32 {
+    return exec_state_storage.lo;
+}
+
+pub fn snapshot_pc() u32 {
+    return exec_state_storage.pc;
+}
+
+pub fn snapshot_halted() bool {
+    return exec_state_storage.halted;
+}
+
+pub fn snapshot_fp_condition_flags() u8 {
+    return exec_state_storage.fp_condition_flags;
+}
+
+pub fn snapshot_instruction_count() u32 {
+    return parsed_program_storage.instruction_count;
+}
+
+/// Initialize execution state for step-by-step execution.
+/// Must be called before step_execution(). Returns parse_error if program is invalid.
+pub fn init_execution(program_text: []const u8, output: []u8, options: EngineOptions) StatusCode {
+    // Reset step state.
+    step_output_buffer = output;
+    step_output_len_bytes = 0;
+    step_count = 0;
+    step_initialized = false;
+
+    // Parse program.
+    const preprocessed_text = source_preprocess.preprocess_source(program_text) orelse {
+        return .parse_error;
+    };
+    const parse_status = parse_program(preprocessed_text, &parsed_program_storage);
+    if (parse_status != .ok) {
+        return parse_status;
+    }
+
+    // Initialize execution state (same as execute_program).
+    const state = &exec_state_storage;
+    state.* = .{
+        .regs = init_integer_registers(),
+        .fp_regs = [_]u32{0} ** 32,
+        .fp_condition_flags = 0,
+        .cp0_regs = [_]i32{0} ** 32,
+        .hi = 0,
+        .lo = 0,
+        .pc = 0,
+        .halted = false,
+        .delayed_branching_enabled = options.delayed_branching_enabled,
+        .smc_enabled = options.smc_enabled,
+        .delayed_branch_state = .cleared,
+        .delayed_branch_target = 0,
+        .input_text = options.input_text,
+        .input_offset_bytes = 0,
+        .text_patch_words = [_]u32{0} ** max_instruction_count,
+        .text_patch_valid = [_]bool{false} ** max_instruction_count,
+        .heap = [_]u8{0} ** heap_capacity_bytes,
+        .heap_len_bytes = 0,
+        .open_files = [_]OpenFile{.{
+            .file_index = 0,
+            .position_bytes = 0,
+            .flags = 0,
+            .in_use = false,
+        }} ** max_open_file_count,
+        .virtual_files = [_]VirtualFile{.{
+            .name = [_]u8{0} ** virtual_file_name_capacity_bytes,
+            .name_len_bytes = 0,
+            .data = [_]u8{0} ** virtual_file_data_capacity_bytes,
+            .len_bytes = 0,
+            .in_use = false,
+        }} ** max_virtual_file_count,
+        .random_streams = [_]JavaRandomState{.{
+            .initialized = false,
+            .stream_id = 0,
+            .seed = 0,
+        }} ** max_random_stream_count,
+    };
+
+    step_initialized = true;
+    return .ok;
+}
+
+/// Execute exactly one instruction. Returns status after the step.
+/// - ok: instruction executed, program still running
+/// - halted: program exited normally
+/// - runtime_error: error occurred
+pub fn step_execution() StatusCode {
+    if (!step_initialized) {
+        return .runtime_error;
+    }
+
+    const state = &exec_state_storage;
+    const parsed = &parsed_program_storage;
+
+    // Already halted - return halted status.
+    if (state.halted) {
+        return .halted;
+    }
+
+    // Check PC bounds.
+    if (state.pc >= parsed.instruction_count) {
+        return .runtime_error;
+    }
+
+    // Check step limit.
+    if (step_count >= 200_000) {
+        return .runtime_error;
+    }
+    step_count += 1;
+
+    const current_pc = state.pc;
+    state.pc += 1;
+
+    var status: StatusCode = .ok;
+    // If SMC patched this slot, execute the patched machine word.
+    if (state.text_patch_valid[current_pc]) {
+        const patched_word = state.text_patch_words[current_pc];
+        status = execute_patched_instruction(
+            parsed,
+            state,
+            current_pc,
+            patched_word,
+            step_output_buffer,
+            &step_output_len_bytes,
+        );
+    } else {
+        const instruction = parsed.instructions[current_pc];
+        status = execute_instruction(parsed, state, &instruction, step_output_buffer, &step_output_len_bytes);
+    }
+    if (status != .ok) return status;
+
+    // Delayed branch sequencing.
+    if (state.delayed_branch_state == .triggered) {
+        state.pc = state.delayed_branch_target;
+        state.delayed_branch_state = .cleared;
+        state.delayed_branch_target = 0;
+    } else if (state.delayed_branch_state == .registered) {
+        state.delayed_branch_state = .triggered;
+    }
+
+    // Check if program halted after this instruction.
+    if (state.halted) {
+        return .halted;
+    }
+
+    return .ok;
+}
+
+/// Get the current output length (for step mode).
+pub fn step_output_len() u32 {
+    return step_output_len_bytes;
 }
 
 fn parse_program(program_text: []const u8, parsed: *Program) StatusCode {
@@ -448,6 +651,68 @@ fn append_u64_be(parsed: *Program, value: u64) bool {
     return true;
 }
 
+/// Try to expand a pseudo-op into basic instructions.
+/// Returns true if expanded (caller should NOT store the pseudo-op).
+/// Returns false if not a pseudo-op (caller should store as-is).
+fn try_expand_pseudo_op(parsed: *Program, instruction: *const LineInstruction) bool {
+    const op = instruction.op[0..instruction.op_len];
+
+    // li: Load Immediate
+    if (std.mem.eql(u8, op, "li")) {
+        if (instruction.operand_count != 2) return false;
+
+        const rd_text = instruction_operand(instruction, 0);
+        const imm_text = instruction_operand(instruction, 1);
+        const imm = operand_parse.parse_immediate(imm_text) orelse return false;
+
+        // Match MARS expansion order:
+        // li $t1,-100   -> addiu RG1, $0, VL2   (sign-extended)
+        // li $t1,100    -> ori RG1, $0, VL2U    (zero-extended unsigned)
+        // li $t1,100000 -> lui $1, VHL2; ori RG1, $1, VL2U (32-bit)
+
+        // If negative, use addiu (sign-extend)
+        if (imm < 0) {
+            return emit_instruction(parsed, "addiu", &[_][]const u8{ rd_text, "$zero", imm_text });
+        }
+
+        // If positive and fits unsigned 16 bits, use ori
+        if (imm <= std.math.maxInt(u16)) {
+            return emit_instruction(parsed, "ori", &[_][]const u8{ rd_text, "$zero", imm_text });
+        }
+
+        // 32-bit immediate: expand to lui + ori
+        // lui $at, HIGH(imm)
+        // ori rd, $at, LOW(imm)
+        const imm_u32 = @as(u32, @bitCast(imm));
+        const high = @as(i32, @bitCast((imm_u32 >> 16) & 0xFFFF));
+        const low = @as(i32, @bitCast(imm_u32 & 0xFFFF));
+
+        // Format immediate values as strings for emit_instruction
+        var high_str: [32]u8 = undefined;
+        var low_str: [32]u8 = undefined;
+
+        const high_len = std.fmt.bufPrint(&high_str, "{}", .{high}) catch return false;
+        const low_len = std.fmt.bufPrint(&low_str, "{}", .{low}) catch return false;
+
+        // Emit lui $at, high
+        if (!emit_instruction(parsed, "lui", &[_][]const u8{ "$at", high_str[0..high_len.len] })) return false;
+
+        // Emit ori rd, $at, low
+        return emit_instruction(parsed, "ori", &[_][]const u8{ rd_text, "$at", low_str[0..low_len.len] });
+    }
+
+    // move: Move register
+    if (std.mem.eql(u8, op, "move")) {
+        if (instruction.operand_count != 2) return false;
+        const rd_text = instruction_operand(instruction, 0);
+        const rs_text = instruction_operand(instruction, 1);
+
+        return emit_instruction(parsed, "addu", &[_][]const u8{ rd_text, rs_text, "$zero" });
+    }
+
+    return false; // Not a pseudo-op we're handling
+}
+
 fn register_instruction(parsed: *Program, line: []const u8) bool {
     if (parsed.instruction_count >= max_instruction_count) return false;
 
@@ -470,6 +735,8 @@ fn register_instruction(parsed: *Program, line: []const u8) bool {
     const op_end_index = std.mem.indexOf(u8, line, op_token) orelse return false;
     const rest_start = op_end_index + op_token.len;
     if (rest_start >= line.len) {
+        // Try pseudo-op expansion first
+        if (try_expand_pseudo_op(parsed, &instruction)) return true;
         parsed.instructions[parsed.instruction_count] = instruction;
         parsed.instruction_count += 1;
         return true;
@@ -477,6 +744,8 @@ fn register_instruction(parsed: *Program, line: []const u8) bool {
 
     const rest = operand_parse.trim_ascii(line[rest_start..]);
     if (rest.len == 0) {
+        // Try pseudo-op expansion first
+        if (try_expand_pseudo_op(parsed, &instruction)) return true;
         parsed.instructions[parsed.instruction_count] = instruction;
         parsed.instruction_count += 1;
         return true;
@@ -499,6 +768,8 @@ fn register_instruction(parsed: *Program, line: []const u8) bool {
         instruction.operand_count += 1;
     }
 
+    // Try pseudo-op expansion first
+    if (try_expand_pseudo_op(parsed, &instruction)) return true;
     parsed.instructions[parsed.instruction_count] = instruction;
     parsed.instruction_count += 1;
     return true;
@@ -943,7 +1214,7 @@ fn execute_program(
     const state = &exec_state_storage;
     // Reinitialize full machine state for each run.
     state.* = .{
-        .regs = [_]i32{0} ** 32,
+        .regs = init_integer_registers(),
         .fp_regs = [_]u32{0} ** 32,
         .fp_condition_flags = 0,
         .cp0_regs = [_]i32{0} ** 32,
@@ -984,15 +1255,15 @@ fn execute_program(
     output_len_bytes.* = 0;
 
     // Guard the interpreter loop to keep malformed programs from spinning forever.
-    var step_count: u32 = 0;
+    var run_step_count: u32 = 0;
     while (!state.halted) {
         if (state.pc >= parsed.instruction_count) {
             return .runtime_error;
         }
-        if (step_count >= 200_000) {
+        if (run_step_count >= 200_000) {
             return .runtime_error;
         }
-        step_count += 1;
+        run_step_count += 1;
 
         const current_pc = state.pc;
         state.pc += 1;
