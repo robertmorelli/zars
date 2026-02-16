@@ -24,7 +24,7 @@
 main:
 	li			$v0,	5				# Load syscall code for read_int
 	syscall								# Execute syscall
-	sub			$t3,	$v0,	1		# Move the input integer from $v0 to $t0
+	subiu			$t3,	$v0,	1		# Move the input integer from $v0 to $t0
 	move		$t6,	$v0				# $t6 used to invert counter
 	lw			$t1,	c_mask			# j imm mask
 	lw			$t2,	j_op			# used later for masking
@@ -45,7 +45,7 @@ body:									# we need a label here to overwrite in th 15-cycle
 	j one								# execute current "subroutine" of 15-cycle
 after_body:								# call is banned for being too powerfull this is ra
 
-	subu		$t3,	$t3,	1		# decrement counter
+	sub		$t3,	$t3,	1		# decrement counter
 	
 	# insert counter into instruction
 	and			$t2,	$t2,	$t3
