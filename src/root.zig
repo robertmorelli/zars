@@ -6,6 +6,18 @@ pub const instruction_word = @import("mars_runtime/instruction_word.zig");
 pub const runtime_state = @import("mars_runtime/runtime_state.zig");
 pub const engine = @import("mars_runtime/engine.zig");
 
+// Import test modules to include them in the test suite.
+test {
+    _ = @import("mars_runtime/engine_arithmetic_test.zig");
+    _ = @import("mars_runtime/engine_syscalls_test.zig");
+    _ = @import("mars_runtime/engine_memory_test.zig");
+    _ = @import("mars_runtime/engine_floating_point_test.zig");
+    _ = @import("mars_runtime/engine_pseudo_ops_test.zig");
+    _ = @import("mars_runtime/engine_delay_slots_test.zig");
+    _ = @import("mars_runtime/engine_smc_test.zig");
+    _ = @import("mars_runtime/engine_errors_test.zig");
+}
+
 pub fn bufferedPrint() !void {
     // Stdout is for the actual output of your application, for example if you
     // are implementing gzip, then only the compressed bytes should be sent to

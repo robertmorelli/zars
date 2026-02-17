@@ -6,6 +6,7 @@ pub const max_label_count: u32 = 1024;
 pub const max_token_len: u32 = 64;
 pub const data_capacity_bytes: u32 = 64 * 1024;
 pub const max_text_word_count: u32 = max_instruction_count * 4;
+pub const max_fixup_count: u32 = max_instruction_count * 4;
 pub const text_base_addr: u32 = 0x00400000;
 pub const data_base_addr: u32 = 0x10010000;
 pub const heap_base_addr: u32 = 0x10040000;
@@ -29,6 +30,22 @@ pub const Label = struct {
     name: [max_token_len]u8,
     len: u8,
     instruction_index: u32,
+};
+
+pub const FixupKind = enum(u8) {
+    hi_no_carry,
+    hi_with_carry,
+    lo_unsigned,
+    lo_signed,
+};
+
+pub const Fixup = struct {
+    label_name: [max_token_len]u8,
+    label_len: u8,
+    offset: i32,
+    instruction_index: u32,
+    operand_index: u8,
+    kind: FixupKind,
 };
 
 pub const LineInstruction = struct {
@@ -55,6 +72,8 @@ pub const Program = struct {
     data_len_bytes: u32,
     data_labels: [max_label_count]Label,
     data_label_count: u32,
+    fixups: [max_fixup_count]Fixup,
+    fixup_count: u32,
 };
 
 pub const VirtualFile = struct {

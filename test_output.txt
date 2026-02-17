@@ -1,0 +1,278 @@
+=== integer_arithmetic ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== bitwise_shift ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== memory_access ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== control_flow ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_ops ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== macro_and_include ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_formatting ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_file_io ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_random_seed ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== floating_point ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delayed_branch_default ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delayed_branch_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delay_slot_pseudo_li_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delay_slot_pseudo_mulu_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delay_slot_pseudo_compare_abs_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delay_slot_pseudo_arith_logic_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delay_slot_pseudo_misc_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delay_slot_pseudo_div_reg_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== program_args ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_syscall_code ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_basic_decode ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_logic_shift ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_load_store ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_branch_jal ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_clear_screen ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== project_mode ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== immediate_logic ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== shift_variable ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== hi_lo_unsigned ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== branch_and_link_family ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== jalr_forms ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_read_string ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_read_char ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_read_float_double ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_sbrk_heap ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== directive_ascii_align ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== delayed_branch_nested_db ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== memory_partial_words ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== fp_condition_flags ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== fp_round_convert ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== fp_move_and_transfer ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== cp0_eret ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== trap_family ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== multiply_accumulate ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_advanced ===
+  mismatch: expected run status 0 but got 5
+  wasm-status: input=0, load=0, run=5, last=5
+=== syscall_exit2 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_time ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_midi_sleep ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== directive_compat_kernel_segments ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_50 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_51 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_52 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_53 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_54 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_55 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_56 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_57 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_58 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== syscall_dialog_59 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_ops_more ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_branches_math ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_unaligned_and_pair ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== address_expression_forms ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_layout_counts ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_layout_counts_more ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_layout_counts_expanded ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== pseudo_div_rem_forms ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_integer_hilo ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_regimm_branches ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_partial_memory ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_trap_cp0 ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_cop1_transfer_branch ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_cop1_arith_convert ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_special2_madd ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== fp_missing_ops ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== mulou_coverage ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== break_runtime_error ===
+  ok
+  wasm-status: input=0, load=0, run=0, last=0
+=== smc_patch_invalid_regimm_rt ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_cop0_rs ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_cop1_branch_likely ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_cop1_fmt_s_funct ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_cop1_fmt_d_funct ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_cop1_fmt_w_funct ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_cop1_rs ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_primary_opcode ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== exception_address_error ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== parse_unknown_mnemonic ===
+  ok
+  wasm-status: input=0, load=0, run=3, last=3
+=== smc_patch_invalid_special_funct ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+=== smc_patch_invalid_special2_funct ===
+  ok
+  wasm-status: input=0, load=0, run=5, last=5
+turbo_test
++- run node failure
+error: the following command exited with error code 1:
+node tools/runtime_main.mjs
+
+Build Summary: 2/4 steps succeeded; 1 failed
+turbo_test transitive failure
++- run node failure
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/92574ad0025a61e692b0a0dc4529a7bb/build /opt/homebrew/Cellar/zig/0.15.2/bin/zig /opt/homebrew/Cellar/zig/0.15.2/lib/zig /Users/robertmorelli/Documents/personal-repos/zars .zig-cache /Users/robertmorelli/.cache/zig --seed 0x2d7e6f4a -Z7502b6a2d97c3787 turbo_test
